@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>心理動作警覺測試 (PVT)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface2: #eeece8;
+  --border: #d8d5ce;
+  --border-dark: #b8b4ab;
+  --text: #1a1916;
+  --muted: #7a756a;
+  --hint: #b0ac9f;
+  --accent: #3a6ea8;
+  --green: #2d7d4f;
+  --amber: #b07a20;
+  --mono: 'Noto Sans TC', sans-serif;
+  --sans: 'Noto Sans TC', sans-serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem 1rem 5rem;
+}
+.wrapper { width: 100%; max-width: 660px; }
+
+header { margin-bottom: 1.75rem; }
+.en-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--hint);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 8px;
+}
+h1 {
+  font-size: clamp(22px, 5vw, 32px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+.subtitle {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.instr-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  padding: 18px 20px;
+  margin-bottom: 1.5rem;
+}
+.instr-card h3 {
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: 0.14em;
+  color: var(--hint);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.instr-card p {
+  font-size: 13.5px;
+  line-height: 1.85;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.instr-card p:last-child { margin-bottom: 0; }
+.instr-steps { list-style: none; margin: 10px 0; padding: 0; }
+.instr-steps li {
+  font-size: 13px;
+  color: #5a5650;
+  padding: 6px 0 6px 22px;
+  position: relative;
+  line-height: 1.65;
+  border-bottom: 1px solid var(--surface2);
+}
+.instr-steps li:last-child { border-bottom: none; }
+.instr-steps li::before {
+  content: attr(data-n);
+  position: absolute; left: 0; top: 7px;
+  font-family: var(--mono);
+  color: var(--accent);
+  font-size: 12px;
+}
+.instr-steps li strong { color: var(--text); font-weight: 500; }
+.note {
+  font-size: 12px;
+  color: var(--hint);
+  border-left: 2px solid var(--border-dark);
+  padding-left: 12px;
+  margin-top: 14px;
+  line-height: 1.75;
+}
+
+/* Hit zone */
+#hit-zone {
+  width: 100%; height: 300px;
+  border: 1.5px solid var(--border-dark);
+  border-radius: 6px;
+  background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; user-select: none;
+  position: relative; overflow: hidden;
+  transition: border-color 0.15s, background 0.15s;
+}
+#hit-zone:hover { border-color: var(--accent); }
+#hit-zone.waiting { cursor: crosshair; }
+#hit-zone.active { border-color: #4a85c8; }
+#hit-zone.false-flash { animation: flashAmber 0.35s; }
+@keyframes flashAmber {
+  0%,100% { border-color: var(--border-dark); }
+  50% { border-color: var(--amber); box-shadow: 0 0 20px rgba(176,122,32,0.2); }
+}
+
+.idle-content { text-align: center; pointer-events: none; }
+.idle-big { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+.idle-sub { font-size: 13px; color: var(--hint); }
+.idle-box {
+  display: block; margin-top: 14px;
+  font-size: 12px; letter-spacing: 0.08em;
+  color: var(--hint);
+}
+#counter {
+  font-family: var(--mono); font-size: 96px;
+  color: #FF0000; font-weight: 700; display: none;
+  letter-spacing: 3px;
+}
+
+.progress-wrap { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+#progress-bar {
+  height: 100%; width: 0%;
+  background: #6b4226; border-radius: 2px;
+  transition: width 0.9s linear;
+}
+#timer-label {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--hint); text-align: right;
+  letter-spacing: 0.06em; margin: 5px 0 1.25rem;
+}
+
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin-bottom: 1rem;
+}
+@media (max-width: 480px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 5px; padding: 12px; text-align: center;
+}
+.stat-label { font-size: 10.5px; color: var(--hint); letter-spacing: 0.06em; margin-bottom: 6px; text-transform: uppercase; }
+.stat-value { font-family: var(--mono); font-size: 22px; color: var(--text); }
+.stat-unit { font-size: 10px; color: var(--hint); margin-top: 2px; }
+
+#history-list { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1rem; }
+.hist-pill {
+  font-family: var(--mono); font-size: 11px;
+  padding: 3px 8px; border-radius: 3px;
+  border: 1px solid var(--border);
+  color: var(--muted); background: var(--surface);
+}
+.hist-pill.fast { color: var(--green); border-color: rgba(45,125,79,0.3); background: rgba(45,125,79,0.05); }
+.hist-pill.slow { color: var(--amber); border-color: rgba(176,122,32,0.3); background: rgba(176,122,32,0.05); }
+.hist-pill.miss { color: #a05050; border-color: rgba(160,80,80,0.3); background: rgba(160,80,80,0.05); }
+
+.btn-row {
+  display: flex; gap: 8px;
+  margin-top: 10px; margin-bottom: 1.5rem;
+}
+.btn {
+  flex: 1; padding: 10px 20px;
+  border: 1px solid var(--border-dark); border-radius: 4px;
+  font-family: var(--sans); font-size: 13px;
+  cursor: pointer; text-align: center;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn-stop {
+  background: var(--surface2); border-color: var(--border-dark); color: var(--muted);
+}
+.btn-stop:hover:not(:disabled) { background: var(--border); color: var(--text); }
+.btn-stop:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-reset {
+  background: var(--surface2); border-color: var(--border-dark); color: var(--muted);
+}
+.btn-reset:hover { background: var(--border); color: var(--text); }
+
+#result-summary {
+  display: none; border: 1px solid var(--border-dark);
+  border-radius: 6px; overflow: hidden; background: var(--surface);
+}
+.result-header {
+  padding: 12px 20px; border-bottom: 1px solid var(--border);
+  background: var(--surface2);
+}
+.result-header h2 {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted);
+}
+.result-body { padding: 6px 20px 20px; }
+.result-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px;
+}
+.result-row:last-of-type { border-bottom: none; }
+.result-row .key { color: var(--muted); }
+.result-row .val { font-family: var(--mono); font-size: 15px; color: var(--text); }
+.result-verdict {
+  margin-top: 14px; padding: 14px 16px;
+  border-radius: 4px; border: 1px solid var(--border);
+  font-size: 14px; line-height: 1.75; background: var(--surface2);
+}
+.verdict-label {
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  margin-bottom: 6px; font-weight: 500;
+}
+.verdict-excellent .verdict-label { color: var(--green); }
+.verdict-excellent { border-color: rgba(45,125,79,0.3); }
+.verdict-normal .verdict-label { color: var(--accent); }
+.verdict-normal { border-color: rgba(58,110,168,0.3); }
+.verdict-slow .verdict-label { color: var(--amber); }
+.verdict-slow { border-color: rgba(176,122,32,0.3); }
+.verdict-poor .verdict-label { color: #a05050; }
+.verdict-poor { border-color: rgba(160,80,80,0.3); }
+
+footer {
+  margin-top: 3rem; font-size: 12px;
+  color: var(--hint); text-align: center; line-height: 1.9;
+}
+footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <span class="en-label">Psychomotor Vigilance Test · PVT</span>
+    <h1>心理動作警覺測試</h1>
+    <p class="subtitle">用於評估持續注意力與反應時間的標準化測驗，常應用於睡眠醫學與認知疲勞研究。</p>
+  </header>
+
+  <div class="instr-card">
+    <h3>測試說明</h3>
+    <p>此測試可評估你的<strong style="color:var(--text);font-weight:500">警覺程度與反應速度</strong>，在睡眠醫學中常用來衡量疲勞或睡眠不足對反應時間的影響。</p>
+    <ol class="instr-steps">
+      <li data-n="1."><strong>點擊下方方框</strong>開始測試。</li>
+      <li data-n="2.">測試開始後，請持續注視方框。畫面將在<strong>隨機時間點</strong>出現紅色跳動數字。</li>
+      <li data-n="3.">一看到數字，請<strong>立刻再次點擊方框</strong>，系統會記錄你的反應時間（毫秒）。</li>
+      <li data-n="4.">數字會在 2 分鐘內<strong>多次出現</strong>，請保持專注，完成完整測試。</li>
+      <li data-n="5.">可隨時按下方的<strong>停止</strong>按鈕提前結束，並查看測試結果。</li>
+    </ol>
+    <div class="note">
+      完整進行 2 分鐘可取得更準確的評估結果。反應時間低於 100 毫秒的點擊視為「誤觸（False Start）」，將自動排除於統計之外。
+    </div>
+  </div>
+
+  <div id="hit-zone" onclick="handleClick()">
+    <div class="idle-content" id="idle-content">
+      <div class="idle-big">點擊此處開始測試</div>
+      <div class="idle-sub">看到紅色數字後立即再次點擊</div>
+      <div class="idle-box">CLICK TO START</div>
+    </div>
+    <span id="counter">0</span>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-stop" id="btn-stop" onclick="stopTest()" disabled>⏹ 停止測試</button>
+    <button class="btn btn-reset" onclick="resetTest()">↺ 重置</button>
+  </div>
+
+  <div class="progress-wrap"><div id="progress-bar"></div></div>
+  <div id="timer-label">剩餘時間 — 120 秒</div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">平均反應</div>
+      <div class="stat-value" id="s-mean">—</div>
+      <div class="stat-unit">ms</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">最快</div>
+      <div class="stat-value" id="s-min">—</div>
+      <div class="stat-unit">ms</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">最慢</div>
+      <div class="stat-value" id="s-max">—</div>
+      <div class="stat-unit">ms</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">有效次數</div>
+      <div class="stat-value" id="s-count">0</div>
+      <div class="stat-unit">次</div>
+    </div>
+  </div>
+
+  <div id="history-list"></div>
+
+  <div id="result-summary">
+    <div class="result-header"><h2>測試結果</h2></div>
+    <div class="result-body">
+      <div class="result-row"><span class="key">測試時長</span><span class="val" id="r-duration">—</span></div>
+      <div class="result-row"><span class="key">誤觸次數（False Starts）</span><span class="val" id="r-false">—</span></div>
+      <div class="result-row"><span class="key">平均反應時間</span><span class="val" id="r-mean">—</span></div>
+      <div class="result-row"><span class="key">最快反應</span><span class="val" id="r-min">—</span></div>
+      <div class="result-row"><span class="key">最慢反應</span><span class="val" id="r-max">—</span></div>
+      <div class="result-row"><span class="key">有效作答次數</span><span class="val" id="r-count">—</span></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>本測試基於 <a href="https://pubmed.ncbi.nlm.nih.gov/15700727/" target="_blank">Dinges &amp; Powell (1985)</a> 所開發之標準 PVT 程序。<br>
+    僅供初步篩查參考，不構成醫療診斷。如有持續疲勞或睡眠問題，請諮詢醫療專業人員。</p>
+  </footer>
+
+</div>
+<script>
+const TOTAL = 120;
+let state = 'idle';
+let responses = [], falseStarts = 0;
+let stimulusTime = null;
+let waitTimer = null, counterInterval = null, progressInterval = null;
+let elapsed = 0, counterVal = 0, testStartTime = null;
+
+function handleClick() {
+  if (state === 'idle') { startTest(); return; }
+  if (state === 'waiting') {
+    falseStarts++;
+    const hz = document.getElementById('hit-zone');
+    hz.classList.add('false-flash');
+    setTimeout(() => hz.classList.remove('false-flash'), 400);
+    return;
+  }
+  if (state === 'showing') {
+    const rt = Math.round(performance.now() - stimulusTime);
+    clearInterval(counterInterval);
+    hideStimulus();
+    if (rt < 100) {
+      falseStarts++;
+    } else {
+      responses.push(rt);
+      addHistItem(rt);
+      updateStats();
+    }
+    state = 'waiting';
+    scheduleStimulus();
+  }
+}
+
+function startTest() {
+  state = 'waiting';
+  responses = []; falseStarts = 0; elapsed = 0;
+  testStartTime = performance.now();
+  document.getElementById('btn-stop').disabled = false;
+  document.getElementById('result-summary').style.display = 'none';
+  document.getElementById('history-list').innerHTML = '';
+  document.getElementById('idle-content').style.display = 'none';
+  document.getElementById('hit-zone').classList.add('waiting');
+  updateStats();
+  scheduleStimulus();
+  startProgress();
+}
+
+function scheduleStimulus() {
+  if (state === 'done') return;
+  waitTimer = setTimeout(showStimulus, 1500 + Math.random() * 8000);
+}
+
+function showStimulus() {
+  if (state !== 'waiting') return;
+  state = 'showing';
+  stimulusTime = performance.now();
+  counterVal = 0;
+  document.getElementById('hit-zone').classList.add('active');
+  document.getElementById('counter').style.display = 'block';
+  counterInterval = setInterval(() => {
+    counterVal += 100;
+    document.getElementById('counter').textContent = counterVal;
+    if (counterVal >= 2000) { clearInterval(counterInterval); registerMiss(); }
+  }, 100);
+}
+
+function registerMiss() {
+  hideStimulus();
+  addHistItem(null);
+  state = 'waiting';
+  scheduleStimulus();
+}
+
+function hideStimulus() {
+  document.getElementById('hit-zone').classList.remove('active');
+  document.getElementById('counter').style.display = 'none';
+}
+
+
+function addHistItem(rt) {
+  const d = document.getElementById('history-list');
+  const span = document.createElement('div');
+  if (rt === null) { span.className = 'hist-pill miss'; span.textContent = 'MISS'; }
+  else {
+    span.className = 'hist-pill' + (rt < 250 ? ' fast' : rt > 500 ? ' slow' : '');
+    span.textContent = rt + ' ms';
+  }
+  d.prepend(span);
+}
+
+function updateStats() {
+  const v = responses;
+  document.getElementById('s-count').textContent = v.length;
+  if (!v.length) { ['s-mean','s-min','s-max'].forEach(id => document.getElementById(id).textContent = '—'); return; }
+  document.getElementById('s-mean').textContent = Math.round(v.reduce((a,b)=>a+b,0)/v.length);
+  document.getElementById('s-min').textContent = Math.min(...v);
+  document.getElementById('s-max').textContent = Math.max(...v);
+}
+
+function startProgress() {
+  elapsed = 0;
+  document.getElementById('progress-bar').style.transition = 'none';
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('timer-label').textContent = `剩餘時間 — ${TOTAL} 秒`;
+  progressInterval = setInterval(() => {
+    elapsed++;
+    document.getElementById('progress-bar').style.transition = 'width 0.9s linear';
+    document.getElementById('progress-bar').style.width = (elapsed/TOTAL*100) + '%';
+    document.getElementById('timer-label').textContent = `剩餘時間 — ${TOTAL - elapsed} 秒`;
+    if (elapsed >= TOTAL) finishTest();
+  }, 1000);
+}
+
+function stopTest() { finishTest(); }
+
+function finishTest() {
+  clearTimeout(waitTimer); clearInterval(counterInterval); clearInterval(progressInterval);
+  state = 'done';
+  document.getElementById('hit-zone').classList.remove('active','waiting');
+  document.getElementById('counter').style.display = 'none';
+  const ic = document.getElementById('idle-content');
+  ic.style.display = 'block';
+  ic.querySelector('.idle-big').textContent = '測試已結束';
+  ic.querySelector('.idle-sub').textContent = '請查看下方結果';
+  ic.querySelector('.idle-box').textContent = '按重置按鈕再次測試';
+  document.getElementById('btn-stop').disabled = true;
+  document.getElementById('timer-label').textContent = '測試完成';
+  const dur = testStartTime ? Math.round((performance.now()-testStartTime)/1000) : elapsed;
+  showResult(dur);
+}
+
+function showResult(duration) {
+  const v = responses;
+  document.getElementById('r-duration').textContent = duration + ' 秒';
+  document.getElementById('r-false').textContent = falseStarts + ' 次';
+  document.getElementById('r-count').textContent = v.length + ' 次';
+  if (!v.length) {
+    ['r-mean','r-min','r-max'].forEach(id => document.getElementById(id).textContent = '無資料');
+  } else {
+    const mean = Math.round(v.reduce((a,b)=>a+b,0)/v.length);
+    document.getElementById('r-mean').textContent = mean + ' ms（共 ' + v.length + ' 次）';
+    document.getElementById('r-min').textContent = Math.min(...v) + ' ms';
+    document.getElementById('r-max').textContent = Math.max(...v) + ' ms';
+  }
+  document.getElementById('result-summary').style.display = 'block';
+  document.getElementById('result-summary').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function resetTest() {
+  clearTimeout(waitTimer); clearInterval(counterInterval); clearInterval(progressInterval);
+  state = 'idle'; responses = []; falseStarts = 0; testStartTime = null;
+  document.getElementById('hit-zone').classList.remove('active','waiting');
+  document.getElementById('counter').style.display = 'none';
+  const ic = document.getElementById('idle-content');
+  ic.style.display = 'block';
+  ic.querySelector('.idle-big').textContent = '點擊此處開始測試';
+  ic.querySelector('.idle-sub').textContent = '看到紅色數字後立即再次點擊';
+  ic.querySelector('.idle-box').textContent = 'CLICK TO START';
+  document.getElementById('btn-stop').disabled = true;
+  document.getElementById('progress-bar').style.transition = 'none';
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('timer-label').textContent = `剩餘時間 — ${TOTAL} 秒`;
+  document.getElementById('history-list').innerHTML = '';
+  document.getElementById('result-summary').style.display = 'none';
+  updateStats();
+}
+</script>
+</body>
+</html>
